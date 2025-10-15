@@ -5,6 +5,8 @@ import { Server as SocketIOServer } from 'socket.io';
 import cors from 'cors';
 import { nanoid } from 'nanoid';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
