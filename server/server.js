@@ -152,4 +152,3 @@ app.get('*', (_, res) => res.sendFile(path.join(CLIENT_DIST, 'index.html')));
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server listening on http://0.0.0.0:${PORT}`);
 });
-});
