@@ -1,0 +1,16 @@
+:root { --gap: 12px; --radius: 12px; font-family: ui-sans-serif, system-ui, Arial; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #0b1220; color: #e6eaf2; }
+.container { max-width: 900px; margin: 0 auto; padding: 24px; }
+.card { background: #121a2b; border: 1px solid #1f2a44; border-radius: var(--radius); padding: 16px; }
+.row { display: flex; gap: var(--gap); flex-wrap: wrap; }
+input, button, select { background: #0e1626; border: 1px solid #1f2a44; color: #e6eaf2; border-radius: 10px; padding: 10px 12px; }
+button.primary { background: #1d4ed8; border-color: #1d4ed8; }
+button.ghost { background: transparent; }
+.badge { padding: 4px 8px; border: 1px solid #334155; border-radius: 999px; font-size: 12px; }
+.deck { display: grid; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: var(--gap); }
+.deck button { padding: 22px 0; font-weight: 700; font-size: 18px; }
+.users { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--gap); }
+.user { padding: 10px; border: 1px dashed #2b3a5e; border-radius: 10px; }
+.footer { opacity: .7; font-size: 12px; margin-top: 16px; }
+.link { color: #93c5fd; }
