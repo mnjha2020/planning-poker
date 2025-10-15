@@ -1,22 +1,19 @@
-# render.yaml
 services:
-  - type: web
-    name: planning-poker
-    runtime: node
-    region: oregon   # choose a close region
-    plan: free
-    buildCommand: |
-      npm --prefix client install
-      npm --prefix client run build
-      npm --prefix server install --omit=dev
-    startCommand: node server/server.js
-    startCommand: node server/server.js
-    envVars:
-      - key: NODE_VERSION
-        value: 20
-      - key: NODE_ENV
-        value: production
-      # Render injects PORT; Express uses process.env.PORT
-      - key: CORS_ORIGIN
-        value: "*"  # tighten later to your custom domain or Pages origin
-    healthCheckPath: /health
+- type: web
+name: planning-poker
+runtime: node
+region: oregon
+plan: free
+buildCommand: |
+npm --prefix client install
+npm --prefix client run build
+npm --prefix server install --omit=dev
+startCommand: node server/server.js
+envVars:
+- key: NODE_VERSION
+value: 20
+- key: NODE_ENV
+value: production
+- key: CORS_ORIGIN
+value: "*"
+healthCheckPath: /health
