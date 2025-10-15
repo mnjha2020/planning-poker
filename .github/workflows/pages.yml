@@ -15,9 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # REQUIRED: point your client at the public server URL (Render, Fly, etc.)
-      VITE_SERVER_URL: https://YOUR-RENDER-SERVICE.onrender.com
+      VITE_SERVER_URL: https://planning-poker.onrender.com
       # OPTIONAL: if your Pages site is a *project* site, set the base path, e.g. /planning-poker/
-      VITE_BASE: /YOUR-REPO-NAME/
+      VITE_BASE: /planning-poker/
     steps:
       - name: Checkout
         uses: actions/checkout@v4
