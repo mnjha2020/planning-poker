@@ -6,7 +6,9 @@ services:
     region: oregon   # choose a close region
     plan: free
     buildCommand: |
-      npm --prefix client ci && npm --prefix client run build && npm --prefix server ci
+        npm --prefix client ci --include=dev
+        npm --prefix client run build
+        npm --prefix server ci --omit=dev
     startCommand: node server/server.js
     envVars:
       - key: NODE_VERSION
