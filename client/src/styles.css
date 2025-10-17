@@ -1,16 +1,166 @@
-:root { --gap: 12px; --radius: 12px; font-family: ui-sans-serif, system-ui, Arial; }
-* { box-sizing: border-box; }
-body { margin: 0; background: #0b1220; color: #e6eaf2; }
-.container { max-width: 900px; margin: 0 auto; padding: 24px; }
-.card { background: #121a2b; border: 1px solid #1f2a44; border-radius: var(--radius); padding: 16px; }
-.row { display: flex; gap: var(--gap); flex-wrap: wrap; }
-input, button, select { background: #0e1626; border: 1px solid #1f2a44; color: #e6eaf2; border-radius: 10px; padding: 10px 12px; }
-button.primary { background: #1d4ed8; border-color: #1d4ed8; }
-button.ghost { background: transparent; }
-.badge { padding: 4px 8px; border: 1px solid #334155; border-radius: 999px; font-size: 12px; }
-.deck { display: grid; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: var(--gap); }
-.deck button { padding: 22px 0; font-weight: 700; font-size: 18px; }
-.users { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--gap); }
-.user { padding: 10px; border: 1px dashed #2b3a5e; border-radius: 10px; }
-.footer { opacity: .7; font-size: 12px; margin-top: 16px; }
-.link { color: #93c5fd; }
+:root {
+  --gap: 16px;
+  --radius: 8px;
+  --primary-color: #2563eb;
+  --background-color: #0f172a;
+  --card-background: #1e293b;
+  --border-color: #334155;
+  --text-color: #f1f5f9;
+  --secondary-text-color: #94a3b8;
+  --accent-color: #60a5fa;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Arial, sans-serif;
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --transition: all 0.2s ease-in-out;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--background-color);
+  color: var(--text-color);
+  line-height: 1.6;
+  font-size: 16px;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 16px;
+}
+
+.card {
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.row {
+  display: flex;
+  gap: var(--gap);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+input, button, select {
+  background: #1e293b;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 14px;
+  transition: var(--transition);
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+button.primary {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #ffffff;
+  font-weight: 500;
+}
+
+button.ghost {
+  background: transparent;
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+button.ghost:hover {
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.badge {
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--secondary-text-color);
+}
+
+.deck {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: var(--gap);
+}
+
+.deck button {
+  padding: 24px 0;
+  font-weight: 600;
+  font-size: 16px;
+  border-radius: var(--radius);
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  transition: var(--transition);
+}
+
+.deck button:hover {
+  background: var(--primary-color);
+  color: #ffffff;
+}
+
+.users {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--gap);
+}
+
+.user {
+  padding: 16px;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.03);
+  transition: var(--transition);
+}
+
+.user:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-style: solid;
+}
+
+.footer {
+  opacity: 0.7;
+  font-size: 13px;
+  margin-top: 24px;
+  text-align: center;
+  color: var(--secondary-text-color);
+}
+
+.link {
+  color: var(--accent-color);
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.link:hover {
+  text-decoration: underline;
+  color: #93c5fd;
+}
