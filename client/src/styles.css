@@ -31,55 +31,27 @@ body {
   max-width: 960px;
   margin: 0 auto;
   padding: 32px 16px;
-  min-height: 400px;
-}
-
-.row {
-  display: flex;
-  gap: var(--gap);
-  flex-wrap: wrap;
-  align-items: flex-start;
-  margin-bottom: var(--gap);
-}
-
-.participants-section, .card-section {
-  width: 100%;
-  background: var(--card-background);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
-  padding: 20px;
-  margin-bottom: var(--gap);
-}
-
-.participants-section .row {
-  justify-content: space-between;
-}
-
-.card-section .row {
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 12px;
 }
 
 .card {
   background: var(--card-background);
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 24px;
   box-shadow: var(--shadow-sm);
   transition: var(--transition);
-  width: 80px;
-  height: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  cursor: pointer;
 }
 
 .card:hover {
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
+}
+
+.row {
+  display: flex;
+  gap: var(--gap);
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 input, button, select {
