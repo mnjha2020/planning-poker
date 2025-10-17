@@ -114,19 +114,7 @@ export default function App(){
         </div>
       )}
 
-      {/* Deck */}
-      {roomId && (
-        <div className="card" style={{marginBottom: 12}}>
-          <div style={{marginBottom: 8}}>Pick a card:</div>
-          <div className="deck">
-            {deck.map(v => (
-              <button key={v} onClick={()=>cast(v)}>{v}</button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Users */}
+{/* Users */}
       {roomId && (
         <div className="card">
           <div style={{marginBottom: 8}}>Participants</div>
@@ -145,6 +133,17 @@ export default function App(){
         </div>
       )}
 
+      {/* Deck */}
+      {roomId && (
+        <div className="card" style={{marginBottom: 12}}>
+          <div style={{marginBottom: 8}}>Pick a card:</div>
+          <div className="deck">
+            {deck.map(v => (
+              <button key={v} onClick={()=>cast(v)}>{v}</button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="footer">Tip: share the Room ID with your team, everyone joins and votes privately until you hit Reveal.</div>
     </div>
   );
