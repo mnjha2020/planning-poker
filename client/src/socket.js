@@ -8,5 +8,5 @@ const SERVER_URL =
 
 export const socket = io(SERVER_URL, {
   withCredentials: false,
-  transports: ['websocket', 'polling']
+  transports: ['websocket']
 });

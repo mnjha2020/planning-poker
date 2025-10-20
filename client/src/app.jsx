@@ -53,7 +53,9 @@ export default function App(){
     if (!myName.trim()) { alert('Enter a display name'); return; }
     localStorage.setItem('pp_name', myName.trim());
     socket.emit('join_room', { roomId: rid, name: myName.trim(), asHost }, (ack) => {
-      if (!ack?.ok) alert('Unable to join room');
+      if (!ack?.ok) {
+        alert(`Unable to join room${ack?.error ? `: ${ack.error}` : ''}`);
+      }
     });
   };
 

@@ -82,17 +82,25 @@ app.get('/health', (_, res) => res.json({ ok: true }));
 io.on('connection', (socket) => {
   let currentRoomId = null;
 
-  socket.on('join_room', ({ roomId, name, asHost } = {}, ack) => {
-    const room = getRoom(roomId);
-    if (!room) return ack?.({ ok: false, error: 'ROOM_NOT_FOUND' });
+ socket.on('join_room', ({ roomId, name, asHost } = {}, ack) => {
+   const room = getRoom(roomId);
+   if (!room) {
+     console.warn(`[join_room] room not found: ${roomId}`);
+     return ack?.({ ok: false, error: 'ROOM_NOT_FOUND' });
+   }
 
-    currentRoomId = roomId;
-    socket.join(roomId);
-    room.users[socket.id] = { name: name?.trim() || 'Guest', vote: null, host: !!asHost };
+   const count = Object.keys(room.users).length;
+   console.log(`[join_room] before=${count} socket=${socket.id} room=${roomId}`);
 
-    io.to(roomId).emit('room_state', roomStatePublic(room));
-    ack?.({ ok: true, room: roomStatePublic(room) });
-  });
+   socket.join(roomId);
+   room.users[socket.id] = { name: (name || 'Guest').trim(), vote: null, host: !!asHost };
+
+   const after = Object.keys(room.users).length;
+   console.log(`[join_room] after=${after} room=${roomId}`);
+
+   io.to(roomId).emit('room_state', roomStatePublic(room));
+   ack?.({ ok: true, room: roomStatePublic(room) });
+ });
 
   socket.on('set_story', ({ roomId, story } = {}) => {
     const room = getRoom(roomId);
