@@ -1,19 +1,19 @@
 services:
-- type: web
+  - type: web
 name: planning-poker
 runtime: node
 region: oregon
 plan: free
 buildCommand: |
-npm --prefix client install
-npm --prefix client run build
-npm --prefix server install --omit=dev
+  npm --prefix client install
+  npm --prefix client run build
+  npm --prefix server install --omit=dev
 startCommand: node server/server.js
 envVars:
-- key: NODE_VERSION
+  - key: NODE_VERSION
 value: 20
-- key: NODE_ENV
+  - key: NODE_ENV
 value: production
-- key: CORS_ORIGIN
+  - key: CORS_ORIGIN
 value: "*"
 healthCheckPath: /health
