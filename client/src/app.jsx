@@ -196,13 +196,17 @@ export default function App(){
         </div>
       )}
 
-      {/* ✅ Participants FIRST (hover-only throw toolbar) */}
+      {/* ✅ Participants FIRST (hover-only throw toolbar + voted color) */}
       {roomId && (
         <div className="card" style={{ marginBottom: 12 }}>
           <div style={{ marginBottom: 8 }}>Participants</div>
           <div className="users">
             {Object.entries(users).map(([id, u]) => (
-              <div className="user" key={id} data-sid={id}>
+              <div
+                className={`user ${u.voted ? 'voted' : 'not-voted'}`}
+                key={id}
+                data-sid={id}
+              >
                 {/* hover-only toolbar */}
                 <div className="hover-throw" aria-hidden="true">
                   {['🎉','🎈','🚀','🥳'].map(em => (
@@ -221,6 +225,7 @@ export default function App(){
           </div>
         </div>
       )}
+
 
       {/* Deck */}
       {roomId && (
