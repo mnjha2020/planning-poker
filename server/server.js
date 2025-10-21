@@ -46,20 +46,6 @@ function createRoom({ deck = DEFAULT_DECK }) {
 function getRoom(roomId) { return rooms.get(roomId); }
 
 function roomStatePublic(room) {
-  // Hide votes until revealed
-  const users = Object.fromEntries(
-    Object.entries(room.users).map(([sid, u]) => [sid, { name: u.name, voted: u.vote !== null }])
-  );
-  return {
-    id: room.id,
-    deck: room.deck,
-    story: room.story,
-    revealed: room.revealed,
-    users,
-  };
-}
-
-function roomStatePublic(room) {
   const users = Object.fromEntries(
     Object.entries(room.users).map(([sid, u]) => [
       sid,
@@ -74,7 +60,6 @@ function roomStatePublic(room) {
     users,
   };
 }
-
 
 // --- REST endpoints --- //
 app.post('/api/rooms', (req, res) => {
