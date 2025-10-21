@@ -82,31 +82,26 @@ app.get('/health', (_, res) => res.json({ ok: true }));
 io.on('connection', (socket) => {
   let currentRoomId = null;
 
- socket.on('join_room', async({ roomId, name, asHost } = {}, ack) => {
- let room = await loadRoom(roomId);
+ socket.on('join_room', async ({ roomId, name, asHost } = {}, ack) => {
+   const room = await loadRoom(roomId);
    if (!room) return ack?.({ ok: false, error: 'ROOM_NOT_FOUND' });
 
-   const desired = String(name || 'Guest').trim();
+   const raw = String(name || '').trim();
+   if (!raw) return ack?.({ ok: false, error: 'EMPTY_NAME' });
+
    const taken = Object.values(room.users).some(
-     u => u.name.trim().toLowerCase() === desired.toLowerCase()
+     u => (u.name || '').trim().toLowerCase() === raw.toLowerCase()
    );
    if (taken) return ack?.({ ok: false, error: 'NAME_TAKEN' });
-   if (!room) {
-     console.warn(`[join_room] room not found: ${roomId}`);
-     return ack?.({ ok: false, error: 'ROOM_NOT_FOUND' });
-   }
 
-   const count = Object.keys(room.users).length;
-   console.log(`[join_room] before=${count} socket=${socket.id} room=${roomId}`);
-
+   // ✅ make sure we actually store the name
    socket.join(roomId);
-   room.users[socket.id] = { name: (name || 'Guest').trim(), vote: null, host: !!asHost };
+   room.users[socket.id] = { name: raw, vote: null, host: !!asHost };
+   room.revealed = false;
 
-   const after = Object.keys(room.users).length;
-   console.log(`[join_room] after=${after} room=${roomId}`);
-
-   io.to(roomId).emit('room_state', roomStatePublic(room));
-   ack?.({ ok: true, room: roomStatePublic(room) });
+   await saveRoom(room); await touchRoomTTL(roomId);
+   io.to(roomId).emit('room_state', publicState(room));
+   ack?.({ ok: true, room: publicState(room) });
  });
 
   socket.on('set_story', ({ roomId, story } = {}) => {
