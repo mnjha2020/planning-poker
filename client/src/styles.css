@@ -1,61 +1,82 @@
+/* ========== THEME (brighter, friendlier) ========== */
 :root {
   --gap: 16px;
-  --radius: 8px;
-  --primary-color: #2563eb;
-  --background-color: #0f172a;
-  --card-background: #1e293b;
-  --border-color: #334155;
-  --text-color: #f1f5f9;
-  --secondary-text-color: #94a3b8;
-  --accent-color: #60a5fa;
+  --radius: 12px;
+
+  /* Vibrant palette */
+  --primary-color: #7c3aed;          /* vivid violet */
+  --primary-600: #6d28d9;
+  --primary-400: #a78bfa;
+  --accent-color: #22d3ee;           /* cyan accent */
+  --accent-400: #67e8f9;
+
+  /* Brighter dark background with subtle glow */
+  --background-color: #0b1021;       /* deeper but cleaner */
+  --bg-gradient-1: #0b1021;
+  --bg-gradient-2: #0e1734;
+  --bg-gradient-3: #111b3f;
+
+  /* Cards: glassy + slightly brighter */
+  --card-background: rgba(22, 30, 54, 0.6);
+  --card-tint: rgba(124, 58, 237, 0.10);   /* violet tint */
+  --border-color: rgba(167, 139, 250, 0.25);
+
+  /* Text */
+  --text-color: #f8fafc;
+  --secondary-text-color: #cbd5e1;
+
+  /* Shadows & motion */
+  --shadow-sm: 0 2px 8px rgba(124, 58, 237, 0.25);
+  --shadow-md: 0 10px 24px rgba(34, 211, 238, 0.12);
+  --glow: 0 0 0 6px rgba(34, 211, 238, 0.15);
+  --transition: all .18s ease;
+
   font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Arial, sans-serif;
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
-  --transition: all 0.2s ease-in-out;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/* ========== RESET ========== */
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  background: var(--background-color);
+  min-height: 100dvh;
   color: var(--text-color);
   line-height: 1.6;
   font-size: 16px;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(124,58,237,.25), transparent 60%),
+    radial-gradient(800px 500px at 90% 10%, rgba(34,211,238,.18), transparent 60%),
+    linear-gradient(180deg, var(--bg-gradient-1), var(--bg-gradient-3));
 }
 
-.container {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 32px 16px;
-}
+/* ========== LAYOUT ========== */
+.container { max-width: 1024px; margin: 0 auto; padding: 40px 16px; }
+.row { display: flex; gap: var(--gap); flex-wrap: wrap; align-items: center; }
 
+/* ========== CARDS (glassy + glow) ========== */
 .card {
-  background: var(--card-background);
+  position: relative;
+  background: linear-gradient(180deg, var(--card-background), rgba(16, 22, 44, .6));
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
   padding: 24px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   box-shadow: var(--shadow-sm);
   transition: var(--transition);
 }
-
-.card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+.card::after {
+  /* soft inner tint */
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(120% 120% at 90% 10%, var(--card-tint), transparent 50%);
+  pointer-events: none;
 }
+.card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
 
-.row {
-  display: flex;
-  gap: var(--gap);
-  flex-wrap: wrap;
-  align-items: center;
-}
-
+/* ========== FORMS & BUTTONS ========== */
 input, button, select {
-  background: #1e293b;
+  background: rgba(255,255,255,0.04);
   border: 1px solid var(--border-color);
   color: var(--text-color);
   border-radius: var(--radius);
@@ -67,100 +88,105 @@ input, button, select {
 input:focus, select:focus {
   outline: none;
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+  box-shadow: var(--glow);
 }
 
-button {
-  cursor: pointer;
-}
-
-button:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
+button { cursor: pointer; font-weight: 600; }
+button:hover { transform: translateY(-1px); }
 
 button.primary {
-  background: var(--primary-color);
-  border-color: var(--primary-color);
-  color: #ffffff;
-  font-weight: 500;
+  background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+  border-color: transparent;
+  color: #0b1021; /* dark text for contrast on neon gradient */
+  text-shadow: 0 1px 0 rgba(255,255,255,.2);
+  box-shadow: 0 6px 18px rgba(124,58,237,.25), 0 2px 10px rgba(34,211,238,.15);
+}
+button.primary:hover {
+  filter: brightness(1.07);
+  box-shadow: 0 8px 22px rgba(124,58,237,.33), 0 4px 14px rgba(34,211,238,.2);
 }
 
 button.ghost {
   background: transparent;
-  border-color: var(--accent-color);
-  color: var(--accent-color);
+  border-color: var(--accent-400);
+  color: var(--accent-400);
 }
+button.ghost:hover { background: rgba(103,232,249,.08); }
 
-button.ghost:hover {
-  background: rgba(37, 99, 235, 0.1);
-}
-
+/* ========== BADGES ========== */
 .badge {
   padding: 6px 12px;
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(103,232,249,.35);
   border-radius: 999px;
   font-size: 12px;
-  font-weight: 500;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--secondary-text-color);
+  font-weight: 700;
+  background: linear-gradient(180deg, rgba(103,232,249,.15), rgba(167,139,250,.12));
+  color: #e2e8f0;
 }
 
+/* ========== DECK (cards that feel tappable) ========== */
 .deck {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
   gap: var(--gap);
 }
-
 .deck button {
-  padding: 24px 0;
-  font-weight: 600;
-  font-size: 16px;
-  border-radius: var(--radius);
-  background: var(--card-background);
-  border: 1px solid var(--border-color);
-  transition: var(--transition);
+  padding: 26px 0;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: .3px;
+  border-radius: calc(var(--radius) + 2px);
+  background: radial-gradient(200% 140% at 50% -20%, rgba(124,58,237,.22), rgba(34,211,238,.14) 45%, rgba(255,255,255,.02) 70%),
+              linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+  border: 1px solid rgba(167,139,250,.35);
+  box-shadow: inset 0 -2px 0 rgba(255,255,255,.06), 0 8px 18px rgba(17,24,39,.35);
+  transform: translateZ(0);
 }
-
 .deck button:hover {
-  background: var(--primary-color);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+  border-color: transparent;
+  color: #0b1021;
+  box-shadow: 0 10px 24px rgba(124,58,237,.35), 0 6px 18px rgba(34,211,238,.25);
+  transform: translateY(-2px);
 }
+.deck button:active { transform: translateY(0); }
 
+/* ========== USERS (chips with subtle glass) ========== */
 .users {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--gap);
 }
-
 .user {
   padding: 16px;
-  border: 1px dashed var(--border-color);
+  border: 1px dashed rgba(167,139,250,.35);
   border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.03);
+  background: linear-gradient(180deg, rgba(167,139,250,.08), rgba(103,232,249,.06));
   transition: var(--transition);
 }
-
 .user:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: linear-gradient(180deg, rgba(167,139,250,.12), rgba(103,232,249,.10));
   border-style: solid;
 }
 
-.footer {
-  opacity: 0.7;
-  font-size: 13px;
-  margin-top: 24px;
-  text-align: center;
-  color: var(--secondary-text-color);
-}
+/* ========== LINKS & FOOTER ========== */
+.link { color: var(--accent-400); text-decoration: none; transition: var(--transition); }
+.link:hover { color: #b1eaff; text-decoration: underline; }
+.footer { opacity: .8; font-size: 13px; margin-top: 24px; text-align: center; color: var(--secondary-text-color); }
 
-.link {
-  color: var(--accent-color);
-  text-decoration: none;
-  transition: var(--transition);
-}
+/* ========== “FUN BAR” + PARTY LAYER (from your throw feature) ========== */
+.funbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.funbar button { font-size:18px; padding:8px 10px; }
 
-.link:hover {
-  text-decoration: underline;
-  color: #93c5fd;
+.party-layer { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 9999; }
+.throwable {
+  position: absolute; left: 0; top: 0;
+  font-size: 32px; will-change: transform, opacity;
+  animation: toss 1.2s ease-out forwards;
+}
+@keyframes toss {
+  0%   { transform: translate(var(--x-start), var(--y-start)) scale(.85) rotate(0deg); opacity: 0; }
+  25%  { opacity: 1; }
+  60%  { transform: translate(var(--x-mid), var(--y-mid)) scale(1.1) rotate(180deg); }
+  100% { transform: translate(var(--x-end), var(--y-end)) scale(.9) rotate(360deg); opacity: 0; }
 }
