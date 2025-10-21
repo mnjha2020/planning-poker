@@ -267,3 +267,23 @@ button.ghost:hover { background: rgba(103,232,249,.08); }
 }
 .hover-throw button:hover { transform: translateY(-1px); }
 
+
+/* Differentiate voters vs. not-yet */
+.user.voted {
+  border: 1px solid #22c55e;              /* green accent */
+  background: rgba(34, 197, 94, 0.08);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.25);
+  transition: all 0.2s ease-in-out;
+}
+
+.user.not-voted {
+  border: 1px dashed #64748b;             /* gray dashed */
+  background: rgba(148, 163, 184, 0.05);
+  opacity: 0.9;
+  transition: all 0.2s ease-in-out;
+}
+
+.user.voted:hover {
+  transform: scale(1.02);
+}
+
