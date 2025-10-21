@@ -91,7 +91,6 @@ io.on('connection', (socket) => {
      u => u.name.trim().toLowerCase() === desired.toLowerCase()
    );
    if (taken) return ack?.({ ok: false, error: 'NAME_TAKEN' });
-   const room = getRoom(roomId);
    if (!room) {
      console.warn(`[join_room] room not found: ${roomId}`);
      return ack?.({ ok: false, error: 'ROOM_NOT_FOUND' });
