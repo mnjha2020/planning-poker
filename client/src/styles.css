@@ -190,3 +190,27 @@ button.ghost:hover { background: rgba(103,232,249,.08); }
   60%  { transform: translate(var(--x-mid), var(--y-mid)) scale(1.1) rotate(180deg); }
   100% { transform: translate(var(--x-end), var(--y-end)) scale(.9) rotate(360deg); opacity: 0; }
 }
+/* --- Fix card stacking/overlap + improve rhythm --- */
+.container .card {
+  /* consistent gap between sections, responsive to viewport */
+  margin-bottom: clamp(16px, 2.5vw, 28px);
+}
+.container .card:last-child { margin-bottom: 0; }
+
+/* Keep the hover lift subtle so it doesn't collide with the next card */
+.card:hover { transform: translateY(-1px); }
+
+/* Keep glows/gradients inside rounded corners */
+.card { overflow: hidden; }
+
+/* Soften shadow so adjacent cards don't visually merge */
+.card {
+  box-shadow: 0 4px 14px rgba(34,211,238,.08), 0 2px 8px rgba(0,0,0,.25);
+}
+
+/* Extra breathing room inside cards that contain grids */
+.deck { margin-top: 12px; gap: clamp(12px, 1.8vw, 20px); }
+.users { margin-top: 12px; }
+
+/* Participant chip tweaks so it doesn't feel edge-to-edge */
+.user { padding: 12px 14px; border-radius: 12px; }

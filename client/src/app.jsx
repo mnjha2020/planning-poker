@@ -54,7 +54,11 @@ export default function App(){
     localStorage.setItem('pp_name', myName.trim());
     socket.emit('join_room', { roomId: rid, name: myName.trim(), asHost }, (ack) => {
       if (!ack?.ok) {
-        alert(`Unable to join room${ack?.error ? `: ${ack.error}` : ''}`);
+        if (ack?.error === 'NAME_TAKEN') {
+          alert('That name is already in use in this room. Pick a different one.');
+        } else {
+          alert(`Unable to join room${ack?.error ? `: ${ack.error}` : ''}`);
+        }
       }
     });
   };

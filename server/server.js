@@ -82,7 +82,15 @@ app.get('/health', (_, res) => res.json({ ok: true }));
 io.on('connection', (socket) => {
   let currentRoomId = null;
 
- socket.on('join_room', ({ roomId, name, asHost } = {}, ack) => {
+ socket.on('join_room', async({ roomId, name, asHost } = {}, ack) => {
+ let room = await loadRoom(roomId);
+   if (!room) return ack?.({ ok: false, error: 'ROOM_NOT_FOUND' });
+
+   const desired = String(name || 'Guest').trim();
+   const taken = Object.values(room.users).some(
+     u => u.name.trim().toLowerCase() === desired.toLowerCase()
+   );
+   if (taken) return ack?.({ ok: false, error: 'NAME_TAKEN' });
    const room = getRoom(roomId);
    if (!room) {
      console.warn(`[join_room] room not found: ${roomId}`);
