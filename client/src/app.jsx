@@ -114,7 +114,6 @@ export default function App(){
   };
 
   useEffect(() => {
-    // Host flag based on localStorage if you refresh
     if (roomId) setIsHost(!!localStorage.getItem('pp_host_' + roomId));
   }, [roomId]);
 
@@ -182,13 +181,21 @@ export default function App(){
           )}
         </div>
       )}
-{/* Participants */}
+
+      {/* ✅ Participants FIRST (with hover-only throw buttons) */}
       {roomId && (
-        <div className="card">
+        <div className="card" style={{ marginBottom: 12 }}>
           <div style={{ marginBottom: 8 }}>Participants</div>
           <div className="users">
             {Object.entries(users).map(([id, u]) => (
               <div className="user" key={id}>
+                {/* hover-only toolbar */}
+                <div className="hover-throw" aria-hidden="true">
+                  {['🎉','🎈','🚀','🥳'].map(em => (
+                    <button key={em} onClick={() => throwItem(em)} title="Throw">{em}</button>
+                  ))}
+                </div>
+
                 <div><strong>{u.name}</strong></div>
                 {!revealed ? (
                   <div className="badge">{u.voted ? 'Voted' : 'Not yet'}</div>
@@ -200,7 +207,8 @@ export default function App(){
           </div>
         </div>
       )}
-      {/* Deck + Throw bar */}
+
+      {/* Deck */}
       {roomId && (
         <div className="card" style={{ marginBottom: 12 }}>
           <div style={{ marginBottom: 8 }}>Pick a card:</div>
@@ -209,18 +217,8 @@ export default function App(){
               <button key={v} onClick={() => cast(v)}>{v}</button>
             ))}
           </div>
-
-          {/* 🎉 show only when in a room */}
-          <div className="funbar" style={{ marginTop: 12 }}>
-            <span style={{ opacity: .7 }}>Throw: </span>
-            {['🎉','🎈','🚀','🥳','🎯','🍕','💥'].map(em => (
-              <button key={em} onClick={() => throwItem(em)}>{em}</button>
-            ))}
-          </div>
         </div>
       )}
-
-
 
       <div className="footer">
         Tip: share the Room ID with your team, everyone joins and votes privately until you hit Reveal.

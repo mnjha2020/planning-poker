@@ -233,3 +233,37 @@ button.ghost:hover { background: rgba(103,232,249,.08); }
 /* Throw toolbar style */
 .funbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .funbar button { font-size: 18px; padding: 8px 10px; }
+
+
+/* Hover-only throw toolbar inside each participant card */
+.user { position: relative; } /* make it a positioning context */
+.hover-throw {
+  position: absolute;
+  top: 8px; right: 8px;
+  display: flex; gap: 6px;
+  background: rgba(12, 18, 34, 0.65);
+  border: 1px solid rgba(167,139,250,.35);
+  border-radius: 999px;
+  padding: 4px 6px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition: opacity .15s ease, transform .15s ease;
+}
+.user:hover .hover-throw {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.hover-throw button {
+  padding: 4px 6px;
+  font-size: 16px;
+  line-height: 1;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.hover-throw button:hover { transform: translateY(-1px); }
+
