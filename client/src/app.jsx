@@ -14,6 +14,7 @@ export default function App(){
   const [roomId, setRoomId] = useState('');
   const [myName, setMyName] = useState(localStorage.getItem('pp_name') || '');
   const [isHost, setIsHost] = useState(false);
+  const [asSpectator, setAsSpectator] = useState(false);      // ✅ new
 
   const [story, setStory] = useState('');
   const [deck, setDeck] = useState(DEFAULT_DECK);
@@ -92,21 +93,26 @@ export default function App(){
     });
     const { roomId: rid } = await res.json();
     setRoomId(rid);
-    localStorage.setItem('pp_host_' + rid, '1');
-    setIsHost(true);
-    join(rid, true);
+    // You can be a host and still choose spectator mode if desired
+    if (!asSpectator) localStorage.setItem('pp_host_' + rid, '1');
+    setIsHost(!asSpectator); // treat yourself as host only if not spectator
+    join(rid, !asSpectator, asSpectator);
   };
 
-  const join = (rid = roomId, asHost = false) => {
+  const join = (rid = roomId, asHost = false, spectator = asSpectator) => {
     if (!myName.trim()) { alert('Enter a display name'); return; }
     localStorage.setItem('pp_name', myName.trim());
-    socket.emit('join_room', { roomId: rid, name: myName.trim(), asHost }, (ack) => {
-      if (!ack?.ok) {
-        if (ack?.error === 'NAME_TAKEN') return alert('That name is already in use in this room. Pick a different one.');
-        if (ack?.error === 'EMPTY_NAME') return alert('Please enter a display name.');
-        return alert(`Unable to join room${ack?.error ? `: ${ack.error}` : ''}`);
+    socket.emit(
+      'join_room',
+      { roomId: rid, name: myName.trim(), asHost, asSpectator: spectator },   // ✅ send spectator flag
+      (ack) => {
+        if (!ack?.ok) {
+          if (ack?.error === 'NAME_TAKEN') return alert('That name is already in use in this room. Pick a different one.');
+          if (ack?.error === 'EMPTY_NAME') return alert('Please enter a display name.');
+          return alert(`Unable to join room${ack?.error ? `: ${ack.error}` : ''}`);
+        }
       }
-    });
+    );
   };
 
   const cast = (value) => socket.emit('cast_vote', { roomId, value });
@@ -150,13 +156,22 @@ export default function App(){
           />
           <button className="primary" onClick={createRoom}>Create Room</button>
         </div>
+
         <div className="row" style={{ marginTop: 12 }}>
           <input
             placeholder="Join room ID"
             value={roomId}
             onChange={e => setRoomId(e.target.value)}
           />
-          <button onClick={() => join(roomId, false)}>Join</button>
+          <button onClick={() => join(roomId, false, asSpectator)}>Join</button>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input
+              type="checkbox"
+              checked={asSpectator}
+              onChange={e => setAsSpectator(e.target.checked)}
+            />
+            Join as spectator
+          </label>
           {roomId && (
             <a
               className="link"
@@ -196,14 +211,14 @@ export default function App(){
         </div>
       )}
 
-      {/* ✅ Participants FIRST (hover-only throw toolbar + voted color) */}
+      {/* ✅ Participants FIRST (hover throw toolbar + spectator styling) */}
       {roomId && (
         <div className="card" style={{ marginBottom: 12 }}>
           <div style={{ marginBottom: 8 }}>Participants</div>
           <div className="users">
             {Object.entries(users).map(([id, u]) => (
               <div
-                className={`user ${u.voted ? 'voted' : 'not-voted'}`}
+                className={`user ${u.spectator ? 'spectator' : u.voted ? 'voted' : 'not-voted'}`}
                 key={id}
                 data-sid={id}
               >
@@ -216,9 +231,13 @@ export default function App(){
 
                 <div><strong>{u.name}</strong></div>
                 {!revealed ? (
-                  <div className="badge">{u.voted ? 'Voted' : 'Not yet'}</div>
+                  u.spectator
+                    ? <div className="badge">Spectator</div>            // ✅ no pressure
+                    : <div className="badge">{u.voted ? 'Voted' : 'Not yet'}</div>
                 ) : (
-                  <div className="badge">{revealResult?.votes?.find(e => e.id === id)?.vote ?? '—'}</div>
+                  <div className="badge">
+                    {revealResult?.votes?.find(e => e.id === id)?.vote ?? (u.spectator ? 'Spectator' : '—')}
+                  </div>
                 )}
               </div>
             ))}
@@ -226,12 +245,13 @@ export default function App(){
         </div>
       )}
 
-
-      {/* Deck */}
+      {/* Deck (spectators: voting optional; we still allow casting) */}
       {roomId && (
         <div className="card" style={{ marginBottom: 12 }}>
-          <div style={{ marginBottom: 8 }}>Pick a card:</div>
-          <div className="deck">
+          <div style={{ marginBottom: 8 }}>
+            Pick a card{asSpectator ? ' (optional for spectators)' : ''}:
+          </div>
+          <div className="deck" style={asSpectator ? { opacity: 0.95 } : undefined}>
             {deck.map(v => (
               <button key={v} onClick={() => cast(v)}>{v}</button>
             ))}

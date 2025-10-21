@@ -59,14 +59,22 @@ function roomStatePublic(room) {
   };
 }
 
-function computeRevealPayload(room) {
-  const entries = Object.entries(room.users).map(([sid, u]) => ({ id: sid, name: u.name, vote: u.vote }));
-  const numericVotes = entries
-    .map(e => parseFloat(e.vote))
-    .filter(v => Number.isFinite(v));
-  const avg = numericVotes.length ? (numericVotes.reduce((a,b)=>a+b,0) / numericVotes.length) : null;
-  return { votes: entries, average: avg };
+function roomStatePublic(room) {
+  const users = Object.fromEntries(
+    Object.entries(room.users).map(([sid, u]) => [
+      sid,
+      { name: u.name, voted: u.vote !== null, spectator: !!u.spectator }   // ✅
+    ])
+  );
+  return {
+    id: room.id,
+    deck: room.deck,
+    story: room.story,
+    revealed: room.revealed,
+    users,
+  };
 }
+
 
 // --- REST endpoints --- //
 app.post('/api/rooms', (req, res) => {
@@ -82,7 +90,7 @@ app.get('/health', (_, res) => res.json({ ok: true }));
 io.on('connection', (socket) => {
   let currentRoomId = null;
 
-  socket.on('join_room', ({ roomId, name, asHost } = {}, ack) => {
+  socket.on('join_room', ({ roomId, name, asHost,asSpectator } = {}, ack) => {
     const room = getRoom(roomId);
     if (!room) return ack?.({ ok: false, error: 'ROOM_NOT_FOUND' });
 
@@ -99,7 +107,12 @@ io.on('connection', (socket) => {
     socket.join(roomId);
 
     // ✅ actually store the name
-    room.users[socket.id] = { name: raw, vote: null, host: !!asHost };
+     room.users[socket.id] = {
+        name: raw,
+        vote: null,
+        host: !!asHost,
+        spectator: !!asSpectator   // ✅ mark spectator
+      };
     room.revealed = false;
 
     // broadcast the updated public state
