@@ -214,3 +214,22 @@ button.ghost:hover { background: rgba(103,232,249,.08); }
 
 /* Participant chip tweaks so it doesn't feel edge-to-edge */
 .user { padding: 12px 14px; border-radius: 12px; }
+
+
+/* 🎉 Fun throwables */
+.party-layer { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 9999; }
+.throwable {
+  position: absolute; left: 0; top: 0;
+  font-size: 32px; will-change: transform, opacity;
+  animation: toss 1.2s ease-out forwards;
+}
+@keyframes toss {
+  0%   { transform: translate(var(--x-start), var(--y-start)) scale(.85) rotate(0deg); opacity: 0; }
+  25%  { opacity: 1; }
+  60%  { transform: translate(var(--x-mid), var(--y-mid)) scale(1.1) rotate(180deg); }
+  100% { transform: translate(var(--x-end), var(--y-end)) scale(.9) rotate(360deg); opacity: 0; }
+}
+
+/* Throw toolbar style */
+.funbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.funbar button { font-size: 18px; padding: 8px 10px; }

@@ -154,6 +154,21 @@ io.on('connection', (socket) => {
     delete room.users[socket.id];
     io.to(currentRoomId).emit('room_state', roomStatePublic(room));
   });
+
+
+// 🎉 FUN: throw items (emojis) that animate on all clients
+socket.on('throw', ({ roomId, item } = {}) => {
+  if (!roomId) return; // nothing to do
+  const payload = {
+    id: nanoid(6),
+    item: String(item || '🎉'),
+    // 0..1 random seeds so everyone sees ~same arc
+    x: Math.random(),
+    y: Math.random(),
+  };
+  io.to(roomId).emit('throw', payload);
+});
+
 });
 
 // --- Serve built client (single-port prod) ---
