@@ -47,18 +47,14 @@ function getRoom(roomId) { return rooms.get(roomId); }
 
 function roomStatePublic(room) {
   const users = Object.fromEntries(
-    Object.entries(room.users).map(([sid, u]) => [
-      sid,
-      { name: u.name, voted: u.vote !== null, spectator: !!u.spectator }   // ✅
-    ])
+    Object.entries(room.users).map(([sid, u]) => [sid, {
+      name: u.name,
+      voted: u.vote !== null,
+      spectator: !!u.spectator,
+      host: !!u.host,          // <- optional
+    }])
   );
-  return {
-    id: room.id,
-    deck: room.deck,
-    story: room.story,
-    revealed: room.revealed,
-    users,
-  };
+  return { id: room.id, deck: room.deck, story: room.story, revealed: room.revealed, users };
 }
 
 // --- REST endpoints --- //

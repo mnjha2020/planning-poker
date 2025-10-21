@@ -38,6 +38,12 @@ export default function App(){
       setRevealed(rs.revealed);
       setUsers(rs.users);
       setRevealResult(null);
+
+      // ✅ ensure host state is correct after updates
+        if (roomId) {
+          const isLocalHost = !!localStorage.getItem('pp_host_' + roomId);
+          if (isLocalHost) setIsHost(true);
+        }
     });
 
     socket.on('reveal_result', (payload) => {
@@ -92,12 +98,18 @@ export default function App(){
       headers: { 'Content-Type': 'application/json' }
     });
     const { roomId: rid } = await res.json();
+
+    // ✅ mark yourself host FIRST (even if you join as spectator)
+    localStorage.setItem('pp_host_' + rid, '1');
+    setIsHost(true);
+
+    // now set roomId so the effect sees the host flag
     setRoomId(rid);
-    // You can be a host and still choose spectator mode if desired
-    if (!asSpectator) localStorage.setItem('pp_host_' + rid, '1');
-    setIsHost(true); // treat yourself as host only if not spectator
+
+    // creator is host; spectator only affects whether you *need* to vote
     join(rid, true, asSpectator);
   };
+
 
   const join = (rid = roomId, asHost = false, spectator = asSpectator) => {
     if (!myName.trim()) { alert('Enter a display name'); return; }
