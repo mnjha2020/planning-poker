@@ -57,6 +57,24 @@ function roomStatePublic(room) {
   return { id: room.id, deck: room.deck, story: room.story, revealed: room.revealed, users };
 }
 
+function computeRevealPayload(room) {
+  // shape: { votes: [{ id, name, vote }...], average: number|null }
+  const entries = Object.entries(room.users).map(([sid, u]) => ({
+    id: sid,
+    name: u.name,
+    vote: u.vote
+  }));
+  const numericVotes = entries
+    .map(e => parseFloat(e.vote))
+    .filter(v => Number.isFinite(v));
+  const average = numericVotes.length
+    ? numericVotes.reduce((a, b) => a + b, 0) / numericVotes.length
+    : null;
+
+  return { votes: entries, average };
+}
+
+
 // --- REST endpoints --- //
 app.post('/api/rooms', (req, res) => {
   const { deck } = req.body || {};
