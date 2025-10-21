@@ -21,7 +21,7 @@ export default function App(){
   const [users, setUsers] = useState({});
   const [revealResult, setRevealResult] = useState(null);
 
-  // 🎉 ephemeral thrown items
+  // 🎉 ephemeral thrown items for animation overlay
   const [throws, setThrows] = useState([]);
 
   useEffect(() => {
@@ -44,15 +44,22 @@ export default function App(){
       setRevealResult(payload);
     });
 
-    // 🎉 listen for throw events and animate
+    // 🎯 throws enter from left/right edges based on payload.side
     socket.on('throw', (payload) => {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-      const x0 = Math.floor(vw * payload.x), y0 = vh;                         // start: bottom
-      const x1 = Math.floor(vw * (0.2 + payload.x * 0.6));
-      const y1 = Math.floor(vh * (0.2 + (1 - payload.y) * 0.5));              // arc peak
-      const x2 = Math.floor(vw * (0.1 + Math.random() * 0.8));
-      const y2 = -Math.floor(vh * 0.1);                                       // exit: top
+
+      // Start off-screen on chosen side, mid near center, exit off the opposite side
+      const y0 = Math.floor(vh * (0.30 + 0.40 * payload.s1)); // 30–70% height
+      const x0 = payload.side === 'right' ? vw + 64 : -64;
+
+      const x1 = payload.side === 'right'
+        ? Math.floor(vw * (0.65 - 0.15 * payload.s2))
+        : Math.floor(vw * (0.35 + 0.15 * payload.s2));
+      const y1 = Math.floor(vh * (0.15 + 0.25 * (1 - payload.s2))); // 15–40%
+
+      const x2 = payload.side === 'right' ? -40 : vw + 40;
+      const y2 = Math.floor(vh * (0.10 + 0.20 * payload.s1)); // 10–30%
 
       const style = {
         '--x-start': `${x0}px`,
@@ -107,10 +114,17 @@ export default function App(){
   const doReset = () => socket.emit('reset', { roomId });
   const updateStory = () => socket.emit('set_story', { roomId, story });
 
-  // 🎉 emit a throw
-  const throwItem = (item) => {
+  // Decide side from the participant card position and emit
+  const throwAt = (targetId, item) => {
     if (!roomId) return;
-    socket.emit('throw', { roomId, item });
+    const el = document.querySelector(`.user[data-sid="${targetId}"]`);
+    let side = 'left';
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      const mid = rect.left + rect.width / 2;
+      side = mid < window.innerWidth / 2 ? 'left' : 'right';
+    }
+    socket.emit('throw', { roomId, item, side });
   };
 
   useEffect(() => {
@@ -182,17 +196,17 @@ export default function App(){
         </div>
       )}
 
-      {/* ✅ Participants FIRST (with hover-only throw buttons) */}
+      {/* ✅ Participants FIRST (hover-only throw toolbar) */}
       {roomId && (
         <div className="card" style={{ marginBottom: 12 }}>
           <div style={{ marginBottom: 8 }}>Participants</div>
           <div className="users">
             {Object.entries(users).map(([id, u]) => (
-              <div className="user" key={id}>
+              <div className="user" key={id} data-sid={id}>
                 {/* hover-only toolbar */}
                 <div className="hover-throw" aria-hidden="true">
                   {['🎉','🎈','🚀','🥳'].map(em => (
-                    <button key={em} onClick={() => throwItem(em)} title="Throw">{em}</button>
+                    <button key={em} onClick={() => throwAt(id, em)} title="Throw">{em}</button>
                   ))}
                 </div>
 

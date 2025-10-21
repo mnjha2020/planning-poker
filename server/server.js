@@ -157,16 +157,18 @@ io.on('connection', (socket) => {
 
 
 // 🎉 FUN: throw items (emojis) that animate on all clients
-socket.on('throw', ({ roomId, item } = {}) => {
-  if (!roomId) return; // nothing to do
+// 🎯 Throw with side (left/right)
+socket.on('throw', ({ roomId, item, side } = {}, ack) => {
+  if (!roomId) return;
   const payload = {
     id: nanoid(6),
     item: String(item || '🎉'),
-    // 0..1 random seeds so everyone sees ~same arc
-    x: Math.random(),
-    y: Math.random(),
+    side: side === 'right' ? 'right' : 'left',  // default left
+    s1: Math.random(), // seeds for trajectory
+    s2: Math.random(),
   };
   io.to(roomId).emit('throw', payload);
+  ack?.({ ok: true });
 });
 
 });
