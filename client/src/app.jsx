@@ -95,8 +95,8 @@ export default function App(){
     setRoomId(rid);
     // You can be a host and still choose spectator mode if desired
     if (!asSpectator) localStorage.setItem('pp_host_' + rid, '1');
-    setIsHost(!asSpectator); // treat yourself as host only if not spectator
-    join(rid, !asSpectator, asSpectator);
+    setIsHost(true); // treat yourself as host only if not spectator
+    join(rid, true, asSpectator);
   };
 
   const join = (rid = roomId, asHost = false, spectator = asSpectator) => {
