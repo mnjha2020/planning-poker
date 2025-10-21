@@ -52,13 +52,12 @@ export default function App(){
   const join = (rid = roomId, asHost = false) => {
     if (!myName.trim()) { alert('Enter a display name'); return; }
     localStorage.setItem('pp_name', myName.trim());
+    // in client/src/App.jsx, join()
     socket.emit('join_room', { roomId: rid, name: myName.trim(), asHost }, (ack) => {
       if (!ack?.ok) {
-        if (ack?.error === 'NAME_TAKEN') {
-          alert('That name is already in use in this room. Pick a different one.');
-        } else {
-          alert(`Unable to join room${ack?.error ? `: ${ack.error}` : ''}`);
-        }
+        if (ack?.error === 'NAME_TAKEN') return alert('That name is already in use in this room. Pick a different one.');
+        if (ack?.error === 'EMPTY_NAME') return alert('Please enter a display name.');
+        return alert(`Unable to join room${ack?.error ? `: ${ack.error}` : ''}`);
       }
     });
   };
