@@ -182,7 +182,24 @@ export default function App(){
           )}
         </div>
       )}
-
+{/* Participants */}
+      {roomId && (
+        <div className="card">
+          <div style={{ marginBottom: 8 }}>Participants</div>
+          <div className="users">
+            {Object.entries(users).map(([id, u]) => (
+              <div className="user" key={id}>
+                <div><strong>{u.name}</strong></div>
+                {!revealed ? (
+                  <div className="badge">{u.voted ? 'Voted' : 'Not yet'}</div>
+                ) : (
+                  <div className="badge">{revealResult?.votes?.find(e => e.id === id)?.vote ?? '—'}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {/* Deck + Throw bar */}
       {roomId && (
         <div className="card" style={{ marginBottom: 12 }}>
@@ -203,24 +220,7 @@ export default function App(){
         </div>
       )}
 
-      {/* Participants */}
-      {roomId && (
-        <div className="card">
-          <div style={{ marginBottom: 8 }}>Participants</div>
-          <div className="users">
-            {Object.entries(users).map(([id, u]) => (
-              <div className="user" key={id}>
-                <div><strong>{u.name}</strong></div>
-                {!revealed ? (
-                  <div className="badge">{u.voted ? 'Voted' : 'Not yet'}</div>
-                ) : (
-                  <div className="badge">{revealResult?.votes?.find(e => e.id === id)?.vote ?? '—'}</div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+
 
       <div className="footer">
         Tip: share the Room ID with your team, everyone joins and votes privately until you hit Reveal.
