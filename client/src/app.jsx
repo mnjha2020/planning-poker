@@ -237,7 +237,7 @@ export default function App(){
               >
                 {/* hover-only toolbar */}
                 <div className="hover-throw" aria-hidden="true">
-                  {['🎉','🎈','🚀','🥳'].map(em => (
+                  {['🎯','✈','𖡎',🎉','🎈','🚀','🥳'].map(em => (
                     <button key={em} onClick={() => throwAt(id, em)} title="Throw">{em}</button>
                   ))}
                 </div>
