@@ -27,7 +27,7 @@ const PORT = process.env.PORT || 4000;
 
 // --- In-memory room store --- //
 // NOTE: Use Redis or a DB for production scale or multi-instance.
-const DEFAULT_DECK = ['0', '1', '2', '3', '5', '8', '13', '20', '40', '100', '?', '☕'];
+const DEFAULT_DECK = ['0','1','2','3','5','8','13','21','34','55','?','☕'];
 const rooms = new Map();
 
 function createRoom({ deck = DEFAULT_DECK }) {
