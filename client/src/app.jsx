@@ -57,39 +57,48 @@ export default function App(){
       const vw = window.innerWidth;
       const vh = window.innerHeight;
 
-      // Start off-screen on chosen side, mid near center, exit off the opposite side
-      const y0 = Math.floor(vh * (0.30 + 0.40 * payload.s1)); // 30–70% height
+      // --- find the target on this client
+      const targetEl = payload.targetId
+        ? document.querySelector(`.user[data-sid="${payload.targetId}"]`)
+        : null;
+
+      // default: center of screen if we can’t find the target
+      let xEnd = vw * 0.5;
+      let yEnd = vh * 0.5;
+
+      if (targetEl) {
+        const r = targetEl.getBoundingClientRect();
+        xEnd = r.left + r.width / 2;
+        yEnd = r.top + r.height / 2;
+      }
+
+      // start off-screen from chosen side at a random height
+      const y0 = Math.floor(vh * (0.25 + 0.50 * payload.s1)); // 25–75%
       const x0 = payload.side === 'right' ? vw + 64 : -64;
 
-      const x1 = payload.side === 'right'
-        ? Math.floor(vw * (0.65 - 0.15 * payload.s2))
-        : Math.floor(vw * (0.35 + 0.15 * payload.s2));
-      const y1 = Math.floor(vh * (0.15 + 0.25 * (1 - payload.s2))); // 15–40%
-
-      const x2 = payload.side === 'right' ? -40 : vw + 40;
-      const y2 = Math.floor(vh * (0.10 + 0.20 * payload.s1)); // 10–30%
+      // mid-point: toward target, lifted for an arc
+      const x1 = Math.floor((x0 + xEnd) / 2 + (payload.side === 'right' ? -40 : 40));
+      const y1 = Math.min(y0, yEnd) - Math.floor(80 + 120 * payload.s2); // peak above
 
       const style = {
         '--x-start': `${x0}px`,
         '--y-start': `${y0}px`,
         '--x-mid':   `${x1}px`,
-        '--y-mid':   `${y1}px`,
-        '--x-end':   `${x2}px`,
-        '--y-end':   `${y2}px`,
+        '--y-mid':   `${Math.max(20, y1)}px`,
+        '--x-end':   `${xEnd}px`,
+        '--y-end':   `${yEnd}px`,
       };
 
-      setThrows(t => [...t, { id: payload.id, item: payload.item, style }]);
+      setThrows(t => [...t, {
+        id: payload.id,
+        item: payload.item,
+        img: payload.img || null,
+        style
+      }]);
+
       setTimeout(() => setThrows(t => t.filter(e => e.id !== payload.id)), 1300);
     });
 
-    return () => {
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
-      socket.off('room_state');
-      socket.off('reveal_result');
-      socket.off('throw');
-    };
-  }, []);
 
   const joined = useMemo(() => !!roomId && Object.keys(users).length > 0, [roomId, users]);
 
@@ -134,8 +143,10 @@ export default function App(){
   const updateStory = () => socket.emit('set_story', { roomId, story });
 
   // Decide side from the participant card position and emit
-  const throwAt = (targetId, item) => {
+  const throwAt = (targetId, itemOrImg) => {
     if (!roomId) return;
+
+    // pick side based on the target’s position (left/right half)
     const el = document.querySelector(`.user[data-sid="${targetId}"]`);
     let side = 'left';
     if (el) {
@@ -143,8 +154,14 @@ export default function App(){
       const mid = rect.left + rect.width / 2;
       side = mid < window.innerWidth / 2 ? 'left' : 'right';
     }
-    socket.emit('throw', { roomId, item, side });
+
+    const payload = itemOrImg.type === 'img'
+      ? { roomId, side, targetId, img: itemOrImg.v }
+      : { roomId, side, targetId, item: itemOrImg.v };
+
+    socket.emit('throw', payload);
   };
+
 
   useEffect(() => {
     if (roomId) setIsHost(!!localStorage.getItem('pp_host_' + roomId));
@@ -238,8 +255,9 @@ export default function App(){
                 {/* hover-only toolbar */}
                 <div className="hover-throw" aria-hidden="true">
                   {['🎯','✈','𖡎','🎉','🎈','🚀','🥳'].map(em => (
-                    <button key={em} onClick={() => throwAt(id, em)} title="Throw">{em}</button>
-                  ))}
+                    <button key={em} onClick={() => throwAt(id, { type: 'char', v: em })} title="Throw">
+                         {em}
+                       </button>
                 </div>
 
                 <div><strong>{u.name}</strong></div>
