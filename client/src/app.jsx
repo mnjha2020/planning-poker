@@ -3,7 +3,7 @@ import { socket } from './socket';
 
 const DEFAULT_DECK = ['0','1','2','3','5','8','13','21','34','55','?','☕'];
 
-// Base URL helper: SAME-ORIGIN (single-port) or GitHub Pages (split hosting via VITE_SERVER_URL)
+// SAME-ORIGIN (single-port) or GitHub Pages (split hosting via VITE_SERVER_URL)
 const SERVER_URL =
   import.meta.env.VITE_SERVER_URL ||
   (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4000');
@@ -14,7 +14,7 @@ export default function App(){
   const [roomId, setRoomId] = useState('');
   const [myName, setMyName] = useState(localStorage.getItem('pp_name') || '');
   const [isHost, setIsHost] = useState(false);
-  const [asSpectator, setAsSpectator] = useState(false);      // ✅ new
+  const [asSpectator, setAsSpectator] = useState(false);
 
   const [story, setStory] = useState('');
   const [deck, setDeck] = useState(DEFAULT_DECK);
@@ -22,7 +22,7 @@ export default function App(){
   const [users, setUsers] = useState({});
   const [revealResult, setRevealResult] = useState(null);
 
-  // 🎉 ephemeral thrown items for animation overlay
+  // 🎉 ephemeral overlay items
   const [throws, setThrows] = useState([]);
 
   useEffect(() => {
@@ -37,14 +37,14 @@ export default function App(){
       setStory(rs.story);
       setRevealed(rs.revealed);
       setUsers(rs.users);
-      // Only clear the reveal panel when the room is NOT revealed
+      // 👇 keep results while revealed
       if (!rs.revealed) setRevealResult(null);
 
-      // ✅ ensure host state is correct after updates
-        if (roomId) {
-          const isLocalHost = !!localStorage.getItem('pp_host_' + roomId);
-          if (isLocalHost) setIsHost(true);
-        }
+      // belt-and-suspenders: ensure host flag is kept
+      if (roomId && localStorage.getItem('pp_host_' + roomId)) {
+        setIsHost(true);
+      }
+      // optional: if server adds host on users[socket.id], we could also read that here
     });
 
     socket.on('reveal_result', (payload) => {
@@ -52,17 +52,17 @@ export default function App(){
       setRevealResult(payload);
     });
 
-    // 🎯 throws enter from left/right edges based on payload.side
+    // 🎯 land-on-target throws
     socket.on('throw', (payload) => {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
 
-      // --- find the target on this client
+      // resolve target DOM
       const targetEl = payload.targetId
         ? document.querySelector(`.user[data-sid="${payload.targetId}"]`)
         : null;
 
-      // default: center of screen if we can’t find the target
+      // fallback center
       let xEnd = vw * 0.5;
       let yEnd = vh * 0.5;
 
@@ -72,13 +72,13 @@ export default function App(){
         yEnd = r.top + r.height / 2;
       }
 
-      // start off-screen from chosen side at a random height
+      // start from chosen edge
       const y0 = Math.floor(vh * (0.25 + 0.50 * payload.s1)); // 25–75%
       const x0 = payload.side === 'right' ? vw + 64 : -64;
 
-      // mid-point: toward target, lifted for an arc
+      // mid-point arches toward target
       const x1 = Math.floor((x0 + xEnd) / 2 + (payload.side === 'right' ? -40 : 40));
-      const y1 = Math.min(y0, yEnd) - Math.floor(80 + 120 * payload.s2); // peak above
+      const y1 = Math.min(y0, yEnd) - Math.floor(80 + 120 * payload.s2); // peak
 
       const style = {
         '--x-start': `${x0}px`,
@@ -91,7 +91,7 @@ export default function App(){
 
       setThrows(t => [...t, {
         id: payload.id,
-        item: payload.item,
+        item: payload.item,   // or image if you add img support
         img: payload.img || null,
         style
       }]);
@@ -99,6 +99,14 @@ export default function App(){
       setTimeout(() => setThrows(t => t.filter(e => e.id !== payload.id)), 1300);
     });
 
+    return () => {
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
+      socket.off('room_state');
+      socket.off('reveal_result');
+      socket.off('throw');
+    };
+  }, [roomId]);
 
   const joined = useMemo(() => !!roomId && Object.keys(users).length > 0, [roomId, users]);
 
@@ -109,24 +117,20 @@ export default function App(){
     });
     const { roomId: rid } = await res.json();
 
-    // ✅ mark yourself host FIRST (even if you join as spectator)
+    // creator is always host (spectator affects only whether you need to vote)
     localStorage.setItem('pp_host_' + rid, '1');
     setIsHost(true);
-
-    // now set roomId so the effect sees the host flag
     setRoomId(rid);
 
-    // creator is host; spectator only affects whether you *need* to vote
     join(rid, true, asSpectator);
   };
-
 
   const join = (rid = roomId, asHost = false, spectator = asSpectator) => {
     if (!myName.trim()) { alert('Enter a display name'); return; }
     localStorage.setItem('pp_name', myName.trim());
     socket.emit(
       'join_room',
-      { roomId: rid, name: myName.trim(), asHost, asSpectator: spectator },   // ✅ send spectator flag
+      { roomId: rid, name: myName.trim(), asHost, asSpectator: spectator },
       (ack) => {
         if (!ack?.ok) {
           if (ack?.error === 'NAME_TAKEN') return alert('That name is already in use in this room. Pick a different one.');
@@ -142,11 +146,9 @@ export default function App(){
   const doReset = () => socket.emit('reset', { roomId });
   const updateStory = () => socket.emit('set_story', { roomId, story });
 
-  // Decide side from the participant card position and emit
-  const throwAt = (targetId, itemOrImg) => {
+  // compute side from target's screen position; send targetId so all clients land on the same card
+  const throwAt = (targetId, item) => {
     if (!roomId) return;
-
-    // pick side based on the target’s position (left/right half)
     const el = document.querySelector(`.user[data-sid="${targetId}"]`);
     let side = 'left';
     if (el) {
@@ -154,14 +156,8 @@ export default function App(){
       const mid = rect.left + rect.width / 2;
       side = mid < window.innerWidth / 2 ? 'left' : 'right';
     }
-
-    const payload = itemOrImg.type === 'img'
-      ? { roomId, side, targetId, img: itemOrImg.v }
-      : { roomId, side, targetId, item: itemOrImg.v };
-
-    socket.emit('throw', payload);
+    socket.emit('throw', { roomId, side, targetId, item });
   };
-
 
   useEffect(() => {
     if (roomId) setIsHost(!!localStorage.getItem('pp_host_' + roomId));
@@ -241,7 +237,7 @@ export default function App(){
         </div>
       )}
 
-      {/* ✅ Participants FIRST (hover throw toolbar + spectator styling) */}
+      {/* Participants FIRST (hover throw toolbar + spectator & voted colors) */}
       {roomId && (
         <div className="card" style={{ marginBottom: 12 }}>
           <div style={{ marginBottom: 8 }}>Participants</div>
@@ -252,10 +248,10 @@ export default function App(){
                 key={id}
                 data-sid={id}
               >
-                {/* hover-only toolbar */}
+                {/* hover-only toolbar; add any emojis you like */}
                 <div className="hover-throw" aria-hidden="true">
-                  {['🎯','✈','𖡎','🎉','🎈','🚀','🥳'].map(em => (
-                    <button key={em} onClick={() => throwAt(id, { type: 'char', v: em })} title="Throw">
+                  {['🎯','✈️','🧻','💗','🎉','🎈','🚀','🥳'].map(em => (
+                    <button key={em} onClick={() => throwAt(id, em)} title="Throw">
                       {em}
                     </button>
                   ))}
@@ -264,7 +260,7 @@ export default function App(){
                 <div><strong>{u.name}</strong></div>
                 {!revealed ? (
                   u.spectator
-                    ? <div className="badge">Spectator</div>            // ✅ no pressure
+                    ? <div className="badge">Spectator</div>
                     : <div className="badge">{u.voted ? 'Voted' : 'Not yet'}</div>
                 ) : (
                   <div className="badge">
@@ -277,7 +273,7 @@ export default function App(){
         </div>
       )}
 
-      {/* Deck (spectators: voting optional; we still allow casting) */}
+      {/* Deck */}
       {roomId && (
         <div className="card" style={{ marginBottom: 12 }}>
           <div style={{ marginBottom: 8 }}>
@@ -307,7 +303,7 @@ export default function App(){
               ...t.style
             }}
           >
-            {t.item}
+            {t.img ? <img src={t.img} alt="" className="throw-img" /> : t.item}
           </div>
         ))}
       </div>
