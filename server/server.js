@@ -139,10 +139,10 @@ io.on('connection', (socket) => {
     if (!room.users[socket.id]) return ack?.({ ok: false });
     room.users[socket.id].vote = String(value);
     io.to(roomId).emit('room_state', roomStatePublic(room));
-    + // If results are already revealed, recompute & re-send the results
-    + if (room.revealed) {
-    +   io.to(roomId).emit('reveal_result', computeRevealPayload(room));
-    + }
+    // If results are already revealed, recompute & re-send the results
+    if (room.revealed) {
+       io.to(roomId).emit('reveal_result', computeRevealPayload(room));
+     }
     ack?.({ ok: true });
   });
 
