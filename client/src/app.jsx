@@ -37,7 +37,8 @@ export default function App(){
       setStory(rs.story);
       setRevealed(rs.revealed);
       setUsers(rs.users);
-      setRevealResult(null);
+      // Only clear the reveal panel when the room is NOT revealed
+      if (!rs.revealed) setRevealResult(null);
 
       // ✅ ensure host state is correct after updates
         if (roomId) {
