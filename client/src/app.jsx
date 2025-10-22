@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { socket } from './socket';
 
-const DEFAULT_DECK = ['0','1','2','3','5','8','13','20','40','100','?','☕'];
+const DEFAULT_DECK = ['0','1','2','3','5','8','13','21','34','55','89','?','☕'];
 
 // Base URL helper: SAME-ORIGIN (single-port) or GitHub Pages (split hosting via VITE_SERVER_URL)
 const SERVER_URL =
