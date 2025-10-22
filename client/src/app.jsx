@@ -256,8 +256,9 @@ export default function App(){
                 <div className="hover-throw" aria-hidden="true">
                   {['🎯','✈','𖡎','🎉','🎈','🚀','🥳'].map(em => (
                     <button key={em} onClick={() => throwAt(id, { type: 'char', v: em })} title="Throw">
-                         {em}
-                       </button>
+                      {em}
+                    </button>
+                  ))}
                 </div>
 
                 <div><strong>{u.name}</strong></div>
