@@ -179,7 +179,7 @@ export default function App(){
             placeholder="Your display name"
             value={myName}
             onChange={e => setMyName(e.target.value)}
-            style={{ flex: 1 }}
+            style={{ flex: '0 1 420px', maxWidth: '420px' }}
           />
 
           {/* Spectator toggle for Create Room (placed to the left of the Create button) */}
@@ -200,7 +200,7 @@ export default function App(){
             placeholder="Join room ID"
             value={roomId}
             onChange={e => setRoomId(e.target.value)}
-            style={{ flex: 1 }}
+            style={{ flex: '0 1 360px', maxWidth: '360px' }}
           />
 
           <button onClick={() => join(roomId, false, asSpectator)}>Join</button>
