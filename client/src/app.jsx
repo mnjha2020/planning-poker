@@ -172,7 +172,7 @@ export default function App(){
         </div>
       </div>
 
-      {/* Lobby / Controls */}
+      {/* Lobby / Controls */
       <div className="card" style={{ marginBottom: 12 }}>
         <div className="row" style={{ alignItems: 'center', gap: 12 }}>
           <input
@@ -203,24 +203,6 @@ export default function App(){
             style={{ flex: 1 }}
           />
 
-          {/* Spectator toggle – immediately to the left of Join */}
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 14,
-              whiteSpace: 'nowrap'
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={asSpectator}
-              onChange={e => setAsSpectator(e.target.checked)}
-            />
-            Spectator
-          </label>
-
           <button onClick={() => join(roomId, false, asSpectator)}>Join</button>
 
           {roomId && (
@@ -236,7 +218,7 @@ export default function App(){
         </div>
       </div>
 
-      {/* Story & Actions */}
+      /* Story & Actions */}
       {roomId && (
         <div className="card" style={{ marginBottom: 12 }}>
           <div className="row" style={{ alignItems: 'center', justifyContent: 'space-between' }}>
