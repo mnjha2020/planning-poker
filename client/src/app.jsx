@@ -183,31 +183,45 @@ export default function App(){
           <button className="primary" onClick={createRoom}>Create Room</button>
         </div>
 
-        <div className="row" style={{ marginTop: 12 }}>
+        <div className="row" style={{ marginTop: 12, alignItems: 'center' }}>
+        <input
+          placeholder="Join room ID"
+          value={roomId}
+          onChange={e => setRoomId(e.target.value)}
+          style={{ flex: 1 }}
+        />
+
+        {/* Spectator toggle – immediately to the left of Join */}
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 14,
+            whiteSpace: 'nowrap'
+          }}
+        >
           <input
-            placeholder="Join room ID"
-            value={roomId}
-            onChange={e => setRoomId(e.target.value)}
+            type="checkbox"
+            checked={asSpectator}
+            onChange={e => setAsSpectator(e.target.checked)}
           />
-          <button onClick={() => join(roomId, false, asSpectator)}>Join</button>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <input
-              type="checkbox"
-              checked={asSpectator}
-              onChange={e => setAsSpectator(e.target.checked)}
-            />
-            Join as spectator
-          </label>
-          {roomId && (
-            <a
-              className="link"
-              href={`#${roomId}`}
-              onClick={e => { e.preventDefault(); navigator.clipboard.writeText(roomId); }}
-            >
-              Copy Room ID
-            </a>
-          )}
-        </div>
+          Spectator
+        </label>
+
+        <button onClick={() => join(roomId, false, asSpectator)}>Join</button>
+
+        {roomId && (
+          <a
+            className="link"
+            href={`#${roomId}`}
+            onClick={e => { e.preventDefault(); navigator.clipboard.writeText(roomId); }}
+            style={{ marginLeft: 8 }}
+          >
+            Copy ID
+          </a>
+        )}
+      </div>
       </div>
 
       {/* Story & Actions */}
