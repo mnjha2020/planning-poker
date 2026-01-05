@@ -13,6 +13,7 @@ function getClientId() {
   return v;
 }
 
+
 const CLIENT_ID = getClientId();
 
 const SERVER_URL =
