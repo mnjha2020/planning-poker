@@ -172,7 +172,7 @@ export default function App() {
       <div className="card" style={{ marginBottom: 12 }}>
         <div className="row" style={{ alignItems: 'center', justifyContent: 'space-between' }}>
           <div>🃏 <strong>Planning Poker</strong></div>
-          <div className="badge">{connected ? 'Online' : 'Offline'}</div>
+          <div className="badge">{connected ? 'Online' : 'Connecting (server may be waking)...'}</div>
         </div>
       </div>
 

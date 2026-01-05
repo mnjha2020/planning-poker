@@ -1,12 +1,22 @@
 import { io } from 'socket.io-client';
 
-// If SAME-ORIGIN deploy (single-port), this resolves to the page origin.
-// If GitHub Pages (split hosting), build with VITE_SERVER_URL=https://your-server.onrender.com
 const SERVER_URL =
   import.meta.env.VITE_SERVER_URL ||
   (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4000');
 
 export const socket = io(SERVER_URL, {
   withCredentials: false,
-  transports: ['websocket']
+  reconnection: true,
+  reconnectionAttempts: Infinity,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  randomizationFactor: 0.5,         // Adds jitter to retries (prevents thundering herd)
+  timeout: 20000,
+  transports: ['websocket'],
+
+  // Optional: upgrade to polling only if websocket fails permanently (rare)
+  // upgrade: false,  // Uncomment if you want to *never* fall back to polling
+
+  // Helpful for debugging in dev
+  autoConnect: true,  // default is true anyway
 });
