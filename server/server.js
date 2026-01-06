@@ -32,6 +32,12 @@ const PORT = process.env.PORT || 4000;
 // For multi-instance use Redis + adapter (not shown here)
 const DEFAULT_DECK = ['0','1','2','3','5','8','13','20','40','100','?','☕'];
 const rooms = new Map();
+//room logger
+function logRoom(roomId, message, extra = {}) {
+  const timestamp = new Date().toISOString();
+  const meta = Object.keys(extra).length ? ` | ${JSON.stringify(extra)}` : '';
+  console.log(`[${timestamp}] [ROOM ${roomId}] ${message}${meta}`);
+}
 
 // helper to create room
 function createRoom({ deck = DEFAULT_DECK } = {}) {
@@ -47,6 +53,7 @@ function createRoom({ deck = DEFAULT_DECK } = {}) {
     createdAt: Date.now()
   };
   rooms.set(id, room);
+  logRoom(id, 'Room created', { deckSize: deck.length });
   return room;
 }
 function getRoom(roomId) { return rooms.get(roomId); }
