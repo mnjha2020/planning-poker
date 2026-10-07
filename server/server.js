@@ -27,6 +27,8 @@ const io = new SocketIOServer(server, {
 });
 
 const PORT = process.env.PORT || 4000;
+// Grace period (ms) to allow clients to reconnect before removing them from the room
+const RECONNECT_GRACE_MS = Number(process.env.RECONNECT_GRACE_MS || 60000);
 
 // --- In-memory room store (single-instance) ---
 // For multi-instance use Redis + adapter (not shown here)
@@ -60,6 +62,8 @@ function getRoom(roomId) { return rooms.get(roomId); }
 
 // socketId -> clientId
 const socketToClient = new Map();
+// timers for deferred removals: key is `${roomId}:${clientId}` -> Timeout
+const removalTimers = new Map();
 
 // Helper: public state (hide raw votes until reveal)
 function roomStatePublic(room) {
@@ -131,13 +135,22 @@ io.on('connection', (socket) => {
 
     // map socket -> client
     socketToClient.set(socket.id, cid);
+    // if there was a pending removal timer for this client in this room, clear it
+    const timerKey = `${roomId}:${cid}`;
+    if (removalTimers.has(timerKey)) {
+      clearTimeout(removalTimers.get(timerKey));
+      removalTimers.delete(timerKey);
+      logRoom(roomId, `Cleared pending removal for ${cid}`);
+    }
 
     // join the socket to the room
     socket.join(roomId);
     currentRoomId = roomId;
 
     // create or update stable user entry
+    let createdNew = false;
     if (!room.users[cid]) {
+      createdNew = true;
       room.users[cid] = { clientId: cid, name: raw, vote: null, host: !!asHost, spectator: !!asSpectator, sockets: new Set([socket.id]) };
     } else {
       // re-associate a reconnect: add socket to sockets set
@@ -149,7 +162,12 @@ io.on('connection', (socket) => {
       if (asHost) room.users[cid].host = true;
     }
 
-    room.revealed = false; // hide votes when someone rejoins / joins
+    // Only hide votes automatically when a brand-new user joins the room.
+    // For reconnects we want to preserve revealed state so transient network
+    // blips don't accidentally hide results.
+    if (createdNew) {
+      room.revealed = false;
+    }
     io.to(roomId).emit('room_state', roomStatePublic(room));
     ack?.({ ok: true, room: roomStatePublic(room), clientId: cid });
   });
@@ -231,11 +249,28 @@ io.on('connection', (socket) => {
     for (const [roomId, room] of rooms.entries()) {
       if (room.users[cid]) {
         room.users[cid].sockets.delete(socket.id);
-        // if no sockets left, remove the user (or keep and mark offline; here we remove)
+        // if no sockets left, schedule removal after grace period instead of immediate deletion
         if (room.users[cid].sockets.size === 0) {
-          delete room.users[cid];
+          const timerKey = `${roomId}:${cid}`;
+          // avoid scheduling multiple timers
+          if (!removalTimers.has(timerKey)) {
+            logRoom(roomId, `No sockets left for ${cid}, scheduling removal in ${RECONNECT_GRACE_MS}ms`);
+            const t = setTimeout(() => {
+              // ensure user still exists and has no sockets
+              const r = getRoom(roomId);
+              if (r && r.users[cid] && r.users[cid].sockets.size === 0) {
+                delete r.users[cid];
+                logRoom(roomId, `Removed user ${cid} after grace period`);
+                io.to(roomId).emit('room_state', roomStatePublic(r));
+              }
+              removalTimers.delete(timerKey);
+            }, RECONNECT_GRACE_MS);
+            removalTimers.set(timerKey, t);
+          }
+        } else {
+          // still has sockets; update immediately
+          io.to(roomId).emit('room_state', roomStatePublic(room));
         }
-        io.to(roomId).emit('room_state', roomStatePublic(room));
       }
     }
   });
