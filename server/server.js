@@ -4,6 +4,7 @@ import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import cors from 'cors';
 import { nanoid } from 'nanoid';
+import crypto from 'crypto';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -52,6 +53,9 @@ function createRoom({ deck = DEFAULT_DECK } = {}) {
     // users keyed by clientId:
     // clientId -> { clientId, name, vote, host, spectator, sockets: Set(socketId) }
     users: {},
+    // Secret handed only to the creator. Presenting it on join is the only way to
+    // become host; it is invalidated when the host role is transferred.
+    hostToken: nanoid(24),
     createdAt: Date.now()
   };
   rooms.set(id, room);
@@ -59,6 +63,25 @@ function createRoom({ deck = DEFAULT_DECK } = {}) {
   return room;
 }
 function getRoom(roomId) { return rooms.get(roomId); }
+
+function tokenMatches(given, expected) {
+  if (typeof given !== 'string' || typeof expected !== 'string') return false;
+  const a = Buffer.from(given);
+  const b = Buffer.from(expected);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+// True only if this socket belongs to the room's current host.
+function isHostSocket(room, socket) {
+  const cid = socketToClient.get(socket.id);
+  const u = cid && room.users[cid];
+  return !!(u && u.host && u.sockets.has(socket.id));
+}
+
+function setHost(room, cid) {
+  Object.values(room.users).forEach(u => { u.host = false; });
+  if (room.users[cid]) room.users[cid].host = true;
+}
 
 // socketId -> clientId
 const socketToClient = new Map();
@@ -107,7 +130,7 @@ function computeRevealPayload(room) {
 app.post('/api/rooms', (req, res) => {
   const { deck } = req.body || {};
   const room = createRoom({ deck });
-  res.json({ roomId: room.id });
+  res.json({ roomId: room.id, hostToken: room.hostToken });
 });
 
 app.get('/health', (_, res) => res.json({ ok: true }));
@@ -117,7 +140,7 @@ io.on('connection', (socket) => {
   // current room id for this socket (optional convenience)
   let currentRoomId = null;
 
-  socket.on('join_room', ({ roomId, name, asHost, asSpectator, clientId } = {}, ack) => {
+  socket.on('join_room', ({ roomId, name, asSpectator, clientId, hostToken } = {}, ack) => {
     const room = getRoom(roomId);
     if (!room) return ack?.({ ok: false, error: 'ROOM_NOT_FOUND' });
 
@@ -132,6 +155,9 @@ io.on('connection', (socket) => {
       existingCid !== cid && (u.name || '').trim().toLowerCase() === raw.toLowerCase()
     );
     if (taken) return ack?.({ ok: false, error: 'NAME_TAKEN' });
+
+    // host is granted only by presenting the room's secret token (never by a client flag)
+    const claimsHost = tokenMatches(hostToken, room.hostToken);
 
     // map socket -> client
     socketToClient.set(socket.id, cid);
@@ -151,15 +177,17 @@ io.on('connection', (socket) => {
     let createdNew = false;
     if (!room.users[cid]) {
       createdNew = true;
-      room.users[cid] = { clientId: cid, name: raw, vote: null, host: !!asHost, spectator: !!asSpectator, sockets: new Set([socket.id]) };
+      room.users[cid] = { clientId: cid, name: raw, vote: null, host: false, spectator: !!asSpectator, sockets: new Set([socket.id]) };
     } else {
       // re-associate a reconnect: add socket to sockets set
       room.users[cid].sockets.add(socket.id);
       // update display name and flags in case they changed
       room.users[cid].name = raw;
       room.users[cid].spectator = !!asSpectator;
-      // don't overwrite host unless explicitly provided true (keep existing)
-      if (asHost) room.users[cid].host = true;
+    }
+    if (claimsHost && !room.users[cid].host) {
+      setHost(room, cid);
+      logRoom(roomId, `Host claimed by ${cid}`);
     }
 
     // Only hide votes automatically when a brand-new user joins the room.
@@ -182,6 +210,7 @@ io.on('connection', (socket) => {
   socket.on('set_deck', ({ roomId, deck } = {}) => {
     const room = getRoom(roomId);
     if (!room || !Array.isArray(deck) || !deck.length) return;
+    if (!isHostSocket(room, socket)) return;
     room.deck = deck.map(String);
     io.to(roomId).emit('room_state', roomStatePublic(room));
   });
@@ -207,6 +236,7 @@ io.on('connection', (socket) => {
   socket.on('reveal', ({ roomId } = {}, ack) => {
     const room = getRoom(roomId);
     if (!room) return ack?.({ ok: false });
+    if (!isHostSocket(room, socket)) return ack?.({ ok: false, error: 'NOT_HOST' });
     room.revealed = true;
     io.to(roomId).emit('reveal_result', computeRevealPayload(room));
     io.to(roomId).emit('room_state', roomStatePublic(room));
@@ -216,9 +246,24 @@ io.on('connection', (socket) => {
   socket.on('reset', ({ roomId, clearStory } = {}, ack) => {
     const room = getRoom(roomId);
     if (!room) return ack?.({ ok: false });
+    if (!isHostSocket(room, socket)) return ack?.({ ok: false, error: 'NOT_HOST' });
     room.revealed = false;
     if (clearStory) room.story = '';
     Object.values(room.users).forEach(u => u.vote = null);
+    io.to(roomId).emit('room_state', roomStatePublic(room));
+    ack?.({ ok: true });
+  });
+
+  // Host hands the role to another participant. Final: the creator's token stops working.
+  socket.on('transfer_host', ({ roomId, targetId } = {}, ack) => {
+    const room = getRoom(roomId);
+    if (!room) return ack?.({ ok: false });
+    if (!isHostSocket(room, socket)) return ack?.({ ok: false, error: 'NOT_HOST' });
+    const cid = socketToClient.get(socket.id);
+    if (!room.users[targetId] || targetId === cid) return ack?.({ ok: false, error: 'BAD_TARGET' });
+    setHost(room, targetId);
+    room.hostToken = null;
+    logRoom(roomId, `Host transferred ${cid} -> ${targetId}`);
     io.to(roomId).emit('room_state', roomStatePublic(room));
     ack?.({ ok: true });
   });
@@ -259,8 +304,17 @@ io.on('connection', (socket) => {
               // ensure user still exists and has no sockets
               const r = getRoom(roomId);
               if (r && r.users[cid] && r.users[cid].sockets.size === 0) {
+                const wasHost = !!r.users[cid].host;
                 delete r.users[cid];
                 logRoom(roomId, `Removed user ${cid} after grace period`);
+                if (wasHost) {
+                  const remaining = Object.entries(r.users);
+                  const next = remaining.find(([, u]) => !u.spectator) || remaining[0];
+                  if (next) {
+                    setHost(r, next[0]);
+                    logRoom(roomId, `Host left; promoted ${next[0]}`);
+                  }
+                }
                 io.to(roomId).emit('room_state', roomStatePublic(r));
               }
               removalTimers.delete(timerKey);
