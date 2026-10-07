@@ -32,7 +32,7 @@ const RECONNECT_GRACE_MS = Number(process.env.RECONNECT_GRACE_MS || 60000);
 
 // --- In-memory room store (single-instance) ---
 // For multi-instance use Redis + adapter (not shown here)
-const DEFAULT_DECK = ['0','1','2','3','5','8','13','20','40','100','?','☕'];
+const DEFAULT_DECK = ['0','1','2','3','5','8','13','21','34','55','?','☕'];
 const rooms = new Map();
 //room logger
 function logRoom(roomId, message, extra = {}) {
