@@ -346,7 +346,7 @@ export default function App() {
                   <input
                     id="nameIn"
                     className={`field${error ? ' err' : ''}`}
-                    placeholder="e.g. Priya"
+                    placeholder="Enter your name"
                     autoComplete="off"
                     value={myName}
                     onChange={e => { setMyName(e.target.value); setError(''); }}
