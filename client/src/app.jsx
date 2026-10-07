@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { socket } from './socket';
 
 // You can keep your preferred deck
@@ -38,7 +38,6 @@ export default function App() {
     try { return decodeURIComponent(window.location.hash.slice(1)); } catch (e) { return ''; }
   });
   const [myName, setMyName] = useState(localStorage.getItem('pp_name') || '');
-  const [isHost, setIsHost] = useState(false);
   const [asSpectator, setAsSpectator] = useState(false);
 
   const [story, setStory] = useState('');
@@ -77,9 +76,8 @@ export default function App() {
       // can re-associate the new socket id with our stable client id. This
       // helps immediately restore presence after transient network blips.
       if (roomId && myName) {
-        const wasHost = !!localStorage.getItem('pp_host_' + roomId);
-        // re-join using known client id
-        join(roomId, wasHost, asSpectator);
+        // re-join using known client id (host token, if we have one, is sent by join)
+        join(roomId, asSpectator);
       }
     };
     const onDisconnect = () => setConnected(false);
@@ -99,8 +97,6 @@ export default function App() {
         if (!rs.users?.[CLIENT_ID]?.voted) setMyVote(null);
       }
 
-      // keep host flag if stored locally
-      if (roomId && localStorage.getItem('pp_host_' + roomId)) setIsHost(true);
     });
 
     socket.on('reveal_result', (payload) => {
@@ -159,19 +155,20 @@ export default function App() {
   const createRoom = async () => {
     if (!myName.trim()) { setError('Please enter a display name to continue.'); return; }
     const res = await fetch(api('/api/rooms'), { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-    const { roomId: rid } = await res.json();
-    // creator always becomes host (spectator only toggles voting preference)
-    localStorage.setItem('pp_host_' + rid, '1');
-    setIsHost(true);
+    const { roomId: rid, hostToken } = await res.json();
+    // the token proves we created the room; the server decides who is host
+    try { localStorage.setItem('pp_hostToken_' + rid, hostToken); } catch (e) {}
     setRoomId(rid);
-    join(rid, true, asSpectator);
+    join(rid, asSpectator);
   };
 
-  const join = (rid = roomId, asHost = false, spectator = asSpectator) => {
+  const join = (rid = roomId, spectator = asSpectator) => {
     if (!myName.trim()) { setError('Please enter a display name to continue.'); return; }
     setError('');
     localStorage.setItem('pp_name', myName.trim());
-    socket.emit('join_room', { roomId: rid, name: myName.trim(), asHost, asSpectator: spectator, clientId: CLIENT_ID }, (ack) => {
+    let hostToken;
+    try { hostToken = localStorage.getItem('pp_hostToken_' + rid) || undefined; } catch (e) {}
+    socket.emit('join_room', { roomId: rid, name: myName.trim(), asSpectator: spectator, clientId: CLIENT_ID, hostToken }, (ack) => {
       if (!ack?.ok) {
         if (ack?.error === 'NAME_TAKEN') return setError('That name is already in use in this room. Pick a different one.');
         if (ack?.error === 'EMPTY_NAME') return setError('Please enter a display name.');
@@ -192,13 +189,21 @@ export default function App() {
     setMyVote(value);
     socket.emit('cast_vote', { roomId, value });
   };
-  const doReveal = () => socket.emit('reveal', { roomId });
+  const notHostToast = (ack) => { if (ack && !ack.ok && ack.error === 'NOT_HOST') showToast('Only the host can do that'); };
+  const doReveal = () => socket.emit('reveal', { roomId }, notHostToast);
   const doReset = () => {
     if (!isHost) return; // only host can reset
     if (!confirm('Are you sure you want to reset the votes?')) return;
-    socket.emit('reset', { roomId });
+    socket.emit('reset', { roomId }, notHostToast);
     // local state cleared optimistically
     setMyVote(null);
+  };
+  const transferHost = (targetId, name) => {
+    if (!confirm(`Make ${name} the host? You will no longer be able to reveal or start new rounds.`)) return;
+    socket.emit('transfer_host', { roomId, targetId }, (ack) => {
+      if (ack?.ok) showToast(`${name} is now the host`);
+      else notHostToast(ack);
+    });
   };
   const updateStory = () => { socket.emit('set_story', { roomId, story }); showToast('Story updated'); };
   const copyInvite = async () => {
@@ -220,13 +225,18 @@ export default function App() {
     socket.emit('throw', { roomId, side, targetId, item });
   };
 
-  useEffect(() => {
-    if (roomId) setIsHost(!!localStorage.getItem('pp_host_' + roomId));
-  }, [roomId]);
-
   const me = users[CLIENT_ID];
   const inRoom = !!roomId && !!me;
   const iAmSpectator = !!me?.spectator;
+  const isHost = !!me?.host;
+
+  // tell the user when they are handed (or reclaim) the host role mid-session
+  const prevHost = useRef(null);
+  useEffect(() => {
+    if (!me) { prevHost.current = null; return; }
+    if (prevHost.current === false && me.host) showToast('You are now the host');
+    prevHost.current = !!me.host;
+  }, [me?.host, !!me]);
 
   // vote lookup + summary stats derived from the revealed payload
   const voteById = useMemo(() => {
@@ -310,6 +320,9 @@ export default function App() {
           <span className="name">{u.name}{cid === CLIENT_ID ? ' (you)' : ''}</span>
           {u.host && <span className="crown" title="Host">👑</span>}
         </div>
+        {isHost && cid !== CLIENT_ID && (
+          <button className="make-host" onClick={() => transferHost(cid, u.name)}>Make host</button>
+        )}
       </div>
     );
   };
@@ -366,9 +379,9 @@ export default function App() {
                     autoComplete="off"
                     value={roomId}
                     onChange={e => { setRoomId(e.target.value.trim()); setError(''); }}
-                    onKeyDown={e => { if (e.key === 'Enter') join(roomId, false, asSpectator); }}
+                    onKeyDown={e => { if (e.key === 'Enter') join(roomId, asSpectator); }}
                   />
-                  <button className="btn" onClick={() => join(roomId, false, asSpectator)}>Join</button>
+                  <button className="btn" onClick={() => join(roomId, asSpectator)}>Join</button>
                 </div>
               </div>
             </div>

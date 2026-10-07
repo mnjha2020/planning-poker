@@ -171,3 +171,7 @@ label.small{display:block;font-size:12px;text-transform:uppercase;letter-spacing
 .topbar-right{display:flex;align-items:center;gap:14px}
 .icon-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-size:16px;line-height:1;display:grid;place-items:center;transition:.15s}
 .icon-btn:hover{background:var(--hover)}
+
+/* host can hand over the role from a seat (hover / keyboard focus) */
+.make-host{margin-top:-4px;background:none;border:0;padding:2px 6px;font-size:11px;font-weight:600;color:var(--blue);text-decoration:underline;opacity:0;transition:opacity .15s}
+.seat:hover .make-host,.seat:focus-within .make-host{opacity:1}
