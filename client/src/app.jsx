@@ -49,6 +49,7 @@ export default function App() {
   const [storyDirty, setStoryDirty] = useState(false);
   const storyDirtyRef = useRef(false);
   const storyRef = useRef(null);
+  const revealedRef = useRef(false); // last revealed value seen from the server
   const markStoryDirty = (v) => { storyDirtyRef.current = v; setStoryDirty(v); };
   const [deck, setDeck] = useState(DEFAULT_DECK);
   const [revealed, setRevealed] = useState(false);
@@ -96,6 +97,9 @@ export default function App() {
 
     socket.on('room_state', (rs) => {
       setDeck(rs.deck);
+      const newRound = revealedRef.current && !rs.revealed && rs.story === '';
+      revealedRef.current = rs.revealed;
+      if (newRound) markStoryDirty(false); // wipe unsaved drafts too, not just the shared text
       if (!storyDirtyRef.current) setStory(rs.story);
       setRevealed(rs.revealed);
       setUsers(rs.users);
@@ -109,6 +113,7 @@ export default function App() {
     });
 
     socket.on('reveal_result', (payload) => {
+      revealedRef.current = true;
       setRevealed(true);
       setRevealResult(payload);
       // keep the local myVote (so user still sees what they picked) — no-op
@@ -202,8 +207,8 @@ export default function App() {
   const doReveal = () => socket.emit('reveal', { roomId }, notHostToast);
   const doReset = () => {
     if (!isHost) return; // only host can reset
-    if (!confirm('Are you sure you want to reset the votes?')) return;
-    socket.emit('reset', { roomId }, notHostToast);
+    if (!confirm('Start a new round? This clears all votes and the story / ticket text.')) return;
+    socket.emit('reset', { roomId, clearStory: true }, notHostToast);
     // local state cleared optimistically
     setMyVote(null);
   };
