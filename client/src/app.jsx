@@ -32,6 +32,9 @@ const SERVER_URL =
   (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4000');
 const api = (p) => `${SERVER_URL}${p}`;
 
+// keep in sync with STORY_MAX in server.js
+const STORY_MAX = 5000;
+
 export default function App() {
   const [connected, setConnected] = useState(socket.connected);
   const [roomId, setRoomId] = useState(() => {
@@ -41,6 +44,12 @@ export default function App() {
   const [asSpectator, setAsSpectator] = useState(false);
 
   const [story, setStory] = useState('');
+  // true while the local draft differs from what the server has, so incoming
+  // room_state updates (e.g. someone voting) don't overwrite what you're typing
+  const [storyDirty, setStoryDirty] = useState(false);
+  const storyDirtyRef = useRef(false);
+  const storyRef = useRef(null);
+  const markStoryDirty = (v) => { storyDirtyRef.current = v; setStoryDirty(v); };
   const [deck, setDeck] = useState(DEFAULT_DECK);
   const [revealed, setRevealed] = useState(false);
   const [users, setUsers] = useState({});
@@ -87,7 +96,7 @@ export default function App() {
 
     socket.on('room_state', (rs) => {
       setDeck(rs.deck);
-      setStory(rs.story);
+      if (!storyDirtyRef.current) setStory(rs.story);
       setRevealed(rs.revealed);
       setUsers(rs.users);
       if (!rs.revealed) {
@@ -205,7 +214,11 @@ export default function App() {
       else notHostToast(ack);
     });
   };
-  const updateStory = () => { socket.emit('set_story', { roomId, story }); showToast('Story updated'); };
+  const updateStory = () => {
+    socket.emit('set_story', { roomId, story });
+    markStoryDirty(false);
+    showToast('Story updated');
+  };
   const copyInvite = async () => {
     const link = `${window.location.origin}${window.location.pathname}#${encodeURIComponent(roomId)}`;
     try { await navigator.clipboard.writeText(link); showToast('Invite link copied ✓'); }
@@ -228,6 +241,19 @@ export default function App() {
   const me = users[CLIENT_ID];
   const inRoom = !!roomId && !!me;
   const iAmSpectator = !!me?.spectator;
+
+  // grow the story box with its content (up to 28% of the window, then scroll)
+  const fitStory = () => {
+    const el = storyRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight + 2, Math.round(window.innerHeight * 0.28))}px`;
+  };
+  useEffect(fitStory, [story, inRoom]);
+  useEffect(() => {
+    window.addEventListener('resize', fitStory);
+    return () => window.removeEventListener('resize', fitStory);
+  }, []);
   const isHost = !!me?.host;
 
   // tell the user when they are handed (or reclaim) the host role mid-session
@@ -396,14 +422,25 @@ export default function App() {
                 <button className="btn" onClick={copyInvite}>Copy invite link</button>
               </div>
               <div className="story">
-                <input
-                  className="field"
-                  placeholder="Story / ticket (optional)"
-                  aria-label="Story"
-                  value={story}
-                  onChange={e => setStory(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') updateStory(); }}
-                />
+                <div className="story-box">
+                  <textarea
+                    ref={storyRef}
+                    className="field story-input"
+                    rows={1}
+                    maxLength={STORY_MAX}
+                    placeholder="Story / ticket — paste the Jira description here (optional)"
+                    aria-label="Story"
+                    value={story}
+                    onChange={e => { setStory(e.target.value); markStoryDirty(true); }}
+                    onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); updateStory(); } }}
+                  />
+                  {(storyDirty || story.length > STORY_MAX * 0.8) && (
+                    <div className="story-meta">
+                      {storyDirty && <span>Not shared yet — click Set or press Ctrl+Enter</span>}
+                      {story.length > STORY_MAX * 0.8 && <span className="story-count">{story.length} / {STORY_MAX}</span>}
+                    </div>
+                  )}
+                </div>
                 <button className="btn" onClick={updateStory}>Set</button>
               </div>
             </div>
