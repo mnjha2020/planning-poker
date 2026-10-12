@@ -35,6 +35,8 @@ const RECONNECT_GRACE_MS = Number(process.env.RECONNECT_GRACE_MS || 60000);
 // For multi-instance use Redis + adapter (not shown here)
 const DEFAULT_DECK = ['0','1','2','3','5','8','13','21','34','55','?','☕'];
 const rooms = new Map();
+// Max story/ticket text (enough for a pasted Jira description)
+const STORY_MAX = 5000;
 //room logger
 function logRoom(roomId, message, extra = {}) {
   const timestamp = new Date().toISOString();
@@ -203,7 +205,7 @@ io.on('connection', (socket) => {
   socket.on('set_story', ({ roomId, story } = {}) => {
     const room = getRoom(roomId);
     if (!room) return;
-    room.story = String(story || '').slice(0, 280);
+    room.story = String(story || '').slice(0, STORY_MAX);
     io.to(roomId).emit('room_state', roomStatePublic(room));
   });
 
